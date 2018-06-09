@@ -1,0 +1,26 @@
+Part 1
+Find: key order
+Ex: 3124
+Input:  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
+Order:  3  1  2  4  3  1  2  4  3  1  2  4  3  1  2  4  
+Output: 1  1  1...  2  2  2...  3  3  3...  4  4  4... based off Order
+
+Part 2
+Generated: possible key
+Ex: 3124
+Order derived from possible key
+Done in reverse for decryption
+1  1  1...  2  2  2...  3  3  3...  4  4  4...
+Input Length/ key Length = n
+L1:
+i = 2 ( of 1234 since we start on 3)
+a = 0
+index = 2*n + a
+i = 0
+index = 0*n + a
+i = 1
+index = 1*n + a
+i = 3
+index = 3*n + a
+inc a
+loop L1
