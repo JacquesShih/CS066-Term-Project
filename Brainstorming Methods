@@ -12,15 +12,17 @@ Order derived from possible key
 Done in reverse for decryption
 1  1  1...  2  2  2...  3  3  3...  4  4  4...
 Input Length/ key Length = n
+{
+a = 0
 L1:
 i = 2 ( of 1234 since we start on 3)
-a = 0
-index = 2*n + a
+index = i*n + a
 i = 0
-index = 0*n + a
+index = i*n + a
 i = 1
-index = 1*n + a
+index = i*n + a
 i = 3
-index = 3*n + a
+index = i*n + a
 inc a
 loop L1
+}
