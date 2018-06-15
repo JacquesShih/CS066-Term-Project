@@ -24,7 +24,7 @@ numb BYTE ?
 
 check DWORD 0 
 
-result BYTE BUFFER_SIZE DUP(?)
+result DWORD BUFFER_SIZE DUP(?)
 
 .code
 main PROC
@@ -126,30 +126,40 @@ close_file:
 		jne OrderBegin 
       
 
-a DWORD 0
+a DWORD ?
 mov index, -1						;Starts at -1 for the first loop to have index = 0
 mov check, 0
 bufferPTR PDWORD buffer
+mov esi, bufferPTR
 mov indexNext, 0
+
+indexResult DWORD 0
+
 De_Begin:
 	inc index					;increase index by 1 for next L1 iteration
 	cmp index, LENGTHOF keyOrder			;if (index > keyorderLength) then the current L2 will be invalid
 	je De_End
-	mov a, [edi + index] 				;put the order value into a
+	mov eax, [edi + index] 				;put the order value into a
+	mov a, eax
 	mov check, 0					;Set i to zero
-
+	
 De_Dust2:
 	mov eax,check
 	mov ebx, LENGTHOF keyOrder
 	mul ebx						;Mult eax by ebx into EDX:EAX
 	mov indexNext, eax
 	mov indexNext, edx
-	add indexNext, LENGTHOF key
-	add result, [bufferPTR + indexNext]
+	mov eax, indexNext
+	mov ebx, a
+	add eax, ebx
+	mov indexNext, eax
+	mov eax, [esi + indexNext]	
+	add result, eax
 	inc check
 	mov eax, LENGTHOF buffer	;top
 	mov ecx, LENGTHOF keyOrder	;bottom edx = remainder
 	div ecx
+	inc indexResult
 	cmp check, eax
 	je De_Begin
 	jmp De_Dust2
@@ -162,14 +172,14 @@ De_End: ;just here to show its ended::empty
 		mov ecx, 0
 		mov esi, resultPTR
 	copy_reverse:
-		mov index, LENGTHOF source
+		mov index, LENGTHOF result
 		mov eax, [esi + ecx]
 		sub index, ecx
 		mov ebx, [esi + index]
 		mov [esi + ecx], ebx
-		mov [esi + LENGTHOF source], eax
+		mov [esi + LENGTHOF result], eax
 		inc ecx
-		cmp ecx, LENGTHOF source
+		cmp ecx, LENGTHOF result
 		jne copy_reverse
 		
 		;Writes result into file
@@ -189,12 +199,6 @@ De_End: ;just here to show its ended::empty
 			mov	bytesWritten,eax		; save return value
 			call	CloseFile
 	
-		; Display the return value.
-			mov	edx,OFFSET str2		; "Bytes written"
-			call	WriteString
-			mov	eax,bytesWritten
-			call	WriteDec
-			call	Crlf
 	
 		INVOKE ExitProcess,0
 	main ENDP
