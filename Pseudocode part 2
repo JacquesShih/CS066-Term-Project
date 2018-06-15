@@ -1,0 +1,59 @@
+Pseudocode
+.data
+
+buffer -- holds file string
+result -- the encrypted/decrypted string
+
+.code
+
+ReadFile
+  Enters file string into buffer
+
+GenerateKey
+  creates key to test
+  
+SortKey
+  uses key to find order of the encryption using permutation
+  keyorder = 1,2,3,4,...n
+  key = <combination of letters elements 1...n> ; HACK EXAMPLE BELOW
+  
+    key = HACK
+    n = keylength
+    i = 0
+    check = 0                         ;If program iterates twice without an illegal order of letters, check will not equal zero
+    OrderBegin:
+      inc check
+      cmp i, n
+      je OrderEnd                    ;if it the last element, go to orderend
+      cmp key[i], key[i+1]
+      ja OrderSwap                   ;if the order is illegal (letterA !< letterB) skip swap
+    OrderNext:
+      inc i
+      jmp OrderBegin
+    OrderSwap:  
+      SWAP key[i] ,key[i+1]
+      SWAP keyorder[i], keyorder[i+1]
+      check = 0                       ;check is resetted if theres an incorrect combination
+      jmp OrderNext
+    OrderEnd:
+      cmp check, 0
+      jne OrderBegin 
+      
+
+keyorder = "3124"
+n = length
+a = 0
+index = 0
+L1:
+	a = keyorder[index]
+	i = 0
+	inc index
+L2:
+	result.append(buffer[i*n+a])
+	inc i
+	cmp i, bufferlength/keyorderlength 
+	je L1
+	jmp L2 
+  
+  CreateFile
+    creates file and enters result string as text
