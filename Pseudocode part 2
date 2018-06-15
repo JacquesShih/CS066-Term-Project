@@ -22,21 +22,22 @@ SortKey
     i = 0
     check = 0                         ;If program iterates twice without an illegal order of letters, check will not equal zero
     OrderBegin:
-      inc check
-      cmp i, n
+      cmp i, n	
       je OrderEnd                    ;if it the last element, go to orderend
       cmp key[i], key[i+1]
       ja OrderSwap                   ;if the order is illegal (letterA !< letterB) skip swap
     OrderNext:
       inc i
       jmp OrderBegin
-    OrderSwap:  
+    OrderSwap:  		;Technicaly could be put above orderNext without the OrderSwap:, but its easier for me to read this way
       SWAP key[i] ,key[i+1]
       SWAP keyorder[i], keyorder[i+1]
-      check = 0                       ;check is resetted if theres an incorrect combination
+      inc check                       ;check is incremented to show that there # number of swaps were done
       jmp OrderNext
     OrderEnd:
-      cmp check, 0
+    	mov eax, offset check
+	check = 0		;check is resetted first
+      cmp eax, 0		;if there were any swaps, the order is "checked" again by jumping back to OrderBegin
       jne OrderBegin 
       
 
