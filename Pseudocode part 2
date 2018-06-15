@@ -44,17 +44,23 @@ SortKey
 keyorder = "3124"
 n = length
 a = 0
-index = 0
-L1:
-	a = keyorder[index]
-	i = 0
-	inc index
-L2:
+index = -1 						;Starts at -1 for the first loop to have index = 0
+De_Begin:
+	inc index					;increase index by 1 for next L1 iteration
+	cmp index, keyorderLength			;if (index > keyorderLength) then the current L2 will be invalid
+	je De_End
+	mov a, keyorder[index] 				;put the order value into a
+	mov i, 0					;Set i to zero
+
+De_Dust2:
 	result.append(buffer[i*n+a])
 	inc i
 	cmp i, bufferlength/keyorderlength 
-	je L1
-	jmp L2 
+	je De_Begin
+	jmp De_Dust2
+	
+De_End:
+	
   
   CreateFile
     creates file and enters result string as text
