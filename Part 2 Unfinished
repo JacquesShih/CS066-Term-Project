@@ -1,0 +1,201 @@
+;Final Term project
+INCLUDE Irvine32.inc
+INCLUDE macros.inc
+
+ExitProcess proto,dwExitCode:dword
+
+.data
+BUFFER_SIZE = 5000
+buffer BYTE BUFFER_SIZE DUP(?)
+filename    BYTE 80 DUP(0)
+fileHandle   HANDLE ?
+stringLength DWORD ?
+bytesWritten DWORD ?
+
+
+PDWORD TYPEDEF DWORD
+
+keyOrder DWORD "3124"
+index DWORD 0
+indexNext DWORD 0
+
+numA BYTE ?
+numb BYTE ?
+
+check DWORD 0 
+
+result BYTE BUFFER_SIZE DUP(?)
+
+.code
+main PROC
+mWrite "Enter an input filename: "
+	;User inputs filename
+	mov	edx,OFFSET filename
+	mov	ecx,SIZEOF filename
+	call	ReadString
+	
+	;Opens said filename
+	mov	edx,OFFSET filename
+	call	OpenInputFile
+	mov	fileHandle,eax
+	
+	; Read the file into a buffer.
+	mov	edx,OFFSET buffer
+	mov	ecx,BUFFER_SIZE
+	call	ReadFromFile
+	jnc	check_buffer_size			; error reading?
+	mWrite "Error reading file. "		; yes: show error message
+	call	WriteWindowsMsg
+	jmp	close_file
+
+		
+check_buffer_size:
+	cmp	eax,BUFFER_SIZE			; buffer large enough?
+	jb	buf_size_ok				; yes
+	mWrite <"Error: Buffer too small for the file",0dh,0ah>
+	jmp	close_file						; and quit
+	
+buf_size_ok:	
+	mov	buffer[eax],0		; insert null terminator
+	mWrite "File size: "
+	call	WriteDec			; display file size
+	call	Crlf
+
+; Display the buffer.
+	mWrite <"Buffer:",0dh,0ah,0dh,0ah>
+	mov	edx,OFFSET buffer	; display the buffer
+	call	WriteString
+	call	Crlf
+
+close_file:
+	mov	eax,fileHandle
+	call	CloseFile
+
+;ENDING OF READ PORTION
+
+;GenerateKey
+;  creates key to test
+  
+;SortKey
+  ;uses key to find order of the encryption using permutation
+  ;keyorder = 1,2,3,4,...n
+  ;key = <combination of letters elements 1...n> ; HACK EXAMPLE BELOW
+  
+    key DWORD "HACK"
+	holdA PDWORD key
+	mov esi, holdA
+
+	holdB PDWORD keyOrder
+	mov edi, holdB
+
+    mov check, 0                     ;If program iterates twice without an illegal order of letters, check will not equal zero
+	mov index, 0
+
+    OrderBegin:
+      cmp index, LENGTHOF key
+      je OrderEnd                    ;if it the last element, go to orderend
+	  mov eax, index
+	  mov indexNext, eax
+	  inc indexNext
+	  mov eax, [esi + index]
+	  mov ebx, [esi + indexNext]
+      cmp eax, ebx
+      ja OrderSwap                   ;if the order is illegal (letterA !< letterB) skip swap
+
+    OrderNext:
+      inc index
+      jmp OrderBegin
+
+    OrderSwap:  		;Technicaly could be put above orderNext without the OrderSwap:, but its easier for me to read this way
+      mov eax, [esi + index] 
+	  mov ebx,[esi + indexNext]
+	  mov [esi], ebx
+	  mov [esi + indexNext], eax
+      mov eax, [edi + index]
+	  mov ebx, [edi + indexNext]
+	  mov [edi + index], ebx
+	  mov [edi + indexNext], eax
+
+      inc check                       ;check is incremented to show that there # number of swaps were done
+      jmp OrderNext
+
+    OrderEnd:
+    	mov ecx, offset check
+		mov check, 0			;check is resetted first
+		cmp ecx, 0				;if there were any swaps, the order is "checked" again by jumping back to OrderBegin
+		jne OrderBegin 
+      
+
+a DWORD 0
+mov index, -1						;Starts at -1 for the first loop to have index = 0
+mov check, 0
+bufferPTR PDWORD buffer
+mov indexNext, 0
+De_Begin:
+	inc index					;increase index by 1 for next L1 iteration
+	cmp index, LENGTHOF keyOrder			;if (index > keyorderLength) then the current L2 will be invalid
+	je De_End
+	mov a, [edi + index] 				;put the order value into a
+	mov check, 0					;Set i to zero
+
+De_Dust2:
+	mov eax,check
+	mov ebx, LENGTHOF keyOrder
+	mul ebx						;Mult eax by ebx into EDX:EAX
+	mov indexNext, eax
+	mov indexNext, edx
+	add indexNext, LENGTHOF key
+	add result, [bufferPTR + indexNext]
+	inc check
+	mov eax, LENGTHOF buffer	;top
+	mov ecx, LENGTHOF keyOrder	;bottom edx = remainder
+	div ecx
+	cmp check, eax
+	je De_Begin
+	jmp De_Dust2
+	
+De_End: ;just here to show its ended::empty
+	
+  
+	;Reverse
+		resultPTR PDWORD result
+		mov ecx, 0
+		mov esi, resultPTR
+	copy_reverse:
+		mov index, LENGTHOF source
+		mov eax, [esi + ecx]
+		sub index, ecx
+		mov ebx, [esi + index]
+		mov [esi + ecx], ebx
+		mov [esi + LENGTHOF source], eax
+		inc ecx
+		cmp ecx, LENGTHOF source
+		jne copy_reverse
+		
+		;Writes result into file
+
+		mWrite "Enter an input filename: "
+			;User inputs filename
+			mov	edx,OFFSET filename
+			mov	ecx,SIZEOF filename
+			call	ReadString
+			
+			; Write the buffer to the output file.
+			
+			mov	eax,fileHandle
+			mov	edx,OFFSET result
+			mov	ecx,stringLength
+			call	WriteToFile
+			mov	bytesWritten,eax		; save return value
+			call	CloseFile
+	
+		; Display the return value.
+			mov	edx,OFFSET str2		; "Bytes written"
+			call	WriteString
+			mov	eax,bytesWritten
+			call	WriteDec
+			call	Crlf
+	
+		INVOKE ExitProcess,0
+	main ENDP
+	END main
