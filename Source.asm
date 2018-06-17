@@ -152,19 +152,21 @@ Part1:
 				jne OrderEncryptionBegin 
 
 
-		mov index, -1						;Starts at -1 for the first loop to have index = 0
+		mov edi, -1
+		index = -1; counter
 		mov check, 0
 		bufferPTRA PDWORD buffer
-		mov esi, bufferPTRA
-		mov indexNext, 0
+		mov esi, 0
+		mov edi, 0
 
 		indexResult DWORD 0
 
 		En_Begin:
-			inc index					;increase index by 1 for next L1 iteration
+			add edi, DWORD					;increase index by 1 for next L1 iteration
+			inc index				;index here stays the same, becomes COUNTER
 			cmp index, LENGTHOF keyOrder			;if (index > keyorderLength) then the current L2 will be invalid
 			je En_End
-			mov eax, [edi + index] 				;put the order value into a
+			mov eax, bufferPTRA[edi] 				;put the order value into a
 			mov a, eax
 			mov check, 0					;Set i to zero
 	
@@ -172,13 +174,13 @@ Part1:
 			mov eax,check
 			mov ebx, LENGTHOF keyOrder
 			mul ebx						;Mult eax by ebx into EDX:EAX
-			mov indexNext, eax
-			mov indexNext, edx
+			mov indexNext, eax			;Dont know what these two are for actually
+			mov indexNext, edx			;Ive been replacing IndexNext with EDI and index with ESI
 			mov eax, indexNext
 			mov ebx, a
 			add eax, ebx
-			mov indexNext, eax
-			mov eax, [esi + indexNext]	
+			mov edi, eax
+			mov eax, bufferPTRA[edi]	
 			add result, eax
 			inc check
 			mov eax, LENGTHOF buffer	;top
@@ -192,9 +194,9 @@ Part1:
 		En_End: ;just here to show its ended::empty
 	
   
-			;Reverse
-				resultPTR PDWORD result
-				mov ecx, 0
+			;Reverse				;I tried something here, but I didnt like it so i deleted it
+				resultPTR PDWORD result		;I think you should pop from the result array and 
+				mov ecx, 0			;WriteChar for each one
 				mov esi, resultPTR
 			copy_reverse:
 				mov index, LENGTHOF result
@@ -217,42 +219,57 @@ Part2:
 		  ;keyorder = 1,2,3,4,...n
 		  ;key = <combination of letters elements 1...n> ; HACK EXAMPLE BELOW
 			
-			mov keyOrder, "1234"
+			mov keyOrder, "0123"	;should add something here that makes 	
+						;key order start at keyOrder, "0"
+						;and adds the previous element + 1 to make a list from 0 to n
+						;eax, 0
+						;ecx = n
+						;L1:
+						;cmp eax, ecx
+						;je endL
+						;keyOrder += eax
+						;inc eax
+						;jmp L1
 
 
-			holdA PDWORD key
-			mov esi, holdA
-			mov eax, keyOrder
-			mov keyOrderPTR, eax
-			mov edi, keyOrderPTR
+			keyPTR PDWORD key
+						;keyOrderPTR PDWORD keyOrder
+						;mov esi, holdA
+						;mov eax, keyOrder
+						;mov keyOrderPTR, eax
+						;mov edi, keyOrderPTR
 
 			mov check, 0                     ;If program iterates twice without an illegal order of letters, check will not equal zero
 			mov index, 0
-
+			mov esi, 0
 			OrderBegin:
 			  cmp index, LENGTHOF key
 			  je OrderEnd                    ;if it the last element, go to orderend
+			  inc check
 			  mov eax, index
 			  mov indexNext, eax
 			  inc indexNext
-			  mov eax, [esi + index]
-			  mov ebx, [esi + indexNext]
+			  mov eax, keyPTR[esi]		;Still compares eax and ebx that have index values next to each other
+			  mov edi, esi
+			  add edi, TYPE DWORD
+			  mov ebx, keyPTR[edi]		;added "add" instructions
 			  cmp eax, ebx
 			  ja OrderSwap                   ;if the order is illegal (letterA !< letterB) skip swap
 
 			OrderNext:
+			  add esi, TYPE DWORD		;edit
 			  inc index
 			  jmp OrderBegin
 
 			OrderSwap:  		;Technicaly could be put above orderNext without the OrderSwap:, but its easier for me to read this way
-			  mov eax, [esi + index] 
-			  mov ebx,[esi + indexNext]
-			  mov [esi], ebx
-			  mov [esi + indexNext], eax
-			  mov eax, [edi + index]
-			  mov ebx, [edi + indexNext]
-			  mov [edi + index], ebx
-			  mov [edi + indexNext], eax
+			  mov eax, keyPTR[esi] 
+			  mov ebx, keyPTR[edi]
+			  mov keyPTR[esi], ebx
+			  mov keyPTR[edi], eax
+			  mov eax, keyOrderPTR[esi]
+			  mov ebx, keyOrderPTR[edi]
+			  mov keyOrderPTR[esi], ebx
+			  mov keyOrderPTR[edi], eax
 
 			  inc check                       ;check is incremented to show that there # number of swaps were done
 			  jmp OrderNext
@@ -268,17 +285,21 @@ Part2:
 		mov index, -1						;Starts at -1 for the first loop to have index = 0
 		mov check, 0
 		bufferPTRB PDWORD buffer
-		mov esi, bufferPTRB
-		mov indexNext, 0
+		;mov esi, bufferPTRB
+		;mov indexNext, 0
 
 
-		mov edi, keyOrder
+		;mov edi, keyOrder
 
+		mov esi, 0
+		mov edi, 0
 		De_Begin:
 			inc index					;increase index by 1 for next L1 iteration
 			cmp index, LENGTHOF keyOrder			;if (index > keyorderLength) then the current L2 will be invalid
 			je De_End
-			mov eax, [edi + index] 				;put the order value into a
+			
+			mov edi, keyOrderPTR[esi]
+			mov eax, bufferPTRB[edi] 				;put the order value into a
 			mov a, eax
 			mov check, 0					;Set i to zero
 	
@@ -286,13 +307,13 @@ Part2:
 			mov eax,check
 			mov ebx, LENGTHOF keyOrder
 			mul ebx						;Mult eax by ebx into EDX:EAX
-			mov indexNext, eax
-			mov indexNext, edx
-			mov eax, indexNext
+			mov esi, eax
+			mov esi, edx					;Care multiplication instruction, look to higher up code
+			mov eax, edi				;for replacement multiplication
 			mov ebx, a
 			add eax, ebx
-			mov indexNext, eax
-			mov eax, [esi + indexNext]	
+			mov esi, eax
+			mov eax, bufferPTRB[esi]	
 			add result, eax
 			inc check
 			mov eax, LENGTHOF buffer	;top
@@ -305,7 +326,7 @@ Part2:
 	
 		De_End: ;just here to show its ended::empty
 	
-  
+  								;look above for other reverse advice
 			;Reverse
 				mov eax, result
 				mov resultPTR, eax
